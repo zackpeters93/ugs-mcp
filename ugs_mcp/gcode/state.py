@@ -26,23 +26,24 @@ class ModalState:
 def apply_line(state: ModalState, line: GCodeLine) -> ModalState:
     """Return a new ModalState after applying all words in a G-code line."""
     s = state.copy()
-    words = {w.letter: w.value for w in line.words}
 
-    # Spindle speed
-    if "S" in words:
-        s.spindle_speed = words["S"]
+    # Build a dict for non-G, non-M words (these are single-valued per line)
+    scalar_words = {w.letter: w.value for w in line.words if w.letter not in ("G", "M")}
 
-    # Tool
-    if "T" in words:
-        s.tool = int(words["T"])
+    # Collect all G and M values (a line can have multiple)
+    g_values = [w.value for w in line.words if w.letter == "G"]
+    m_values = [w.value for w in line.words if w.letter == "M"]
 
-    # Feedrate
-    if "F" in words:
-        s.feedrate = words["F"]
+    # Spindle speed, tool, feedrate (single-valued)
+    if "S" in scalar_words:
+        s.spindle_speed = scalar_words["S"]
+    if "T" in scalar_words:
+        s.tool = int(scalar_words["T"])
+    if "F" in scalar_words:
+        s.feedrate = scalar_words["F"]
 
-    # G-codes
-    g = words.get("G")
-    if g is not None:
+    # Process all G-codes
+    for g in g_values:
         if g == 20:
             s.units = "inch"
         elif g == 21:
@@ -65,10 +66,11 @@ def apply_line(state: ModalState, line: GCodeLine) -> ModalState:
             s.coord_system = f"G{int(g)}"
         elif g == 28:
             s.homed = True
+        elif g == 92:
+            s.work_zero_set = True
 
-    # M-codes
-    m = words.get("M")
-    if m is not None:
+    # Process all M-codes
+    for m in m_values:
         if m == 3:
             s.spindle_state = "cw"
         elif m == 4:
@@ -76,13 +78,14 @@ def apply_line(state: ModalState, line: GCodeLine) -> ModalState:
         elif m == 5:
             s.spindle_state = "off"
 
-    # Position update for motion commands
-    if g in (0, 1, 2, 3):
+    # Position update - check if any motion G-code was on this line
+    motion_g = next((g for g in g_values if g in (0, 1, 2, 3)), None)
+    if motion_g is not None:
         for axis in ("X", "Y", "Z"):
-            if axis in words:
+            if axis in scalar_words:
                 if s.positioning == "absolute":
-                    s.position[axis] = words[axis]
+                    s.position[axis] = scalar_words[axis]
                 else:
-                    s.position[axis] += words[axis]
+                    s.position[axis] += scalar_words[axis]
 
     return s

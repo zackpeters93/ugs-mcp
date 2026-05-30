@@ -69,3 +69,11 @@ def test_g17_sets_xy_plane():
 def test_g54_sets_coord_system():
     s = apply_line(ModalState(), parse_line("G54"))
     assert s.coord_system == "G54"
+
+
+def test_multiple_gcodes_on_one_line():
+    # G90 G0 X10 Y5 is very common in real G-code - both should be applied
+    s = apply_line(ModalState(), parse_line("G90 G0 X10 Y5"))
+    assert s.positioning == "absolute"
+    assert s.position["X"] == 10.0
+    assert s.position["Y"] == 5.0
