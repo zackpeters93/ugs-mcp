@@ -9,6 +9,8 @@ async def send_gcode(command: str) -> Dict[str, Any]:
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(url, params={"gCode": command})
+            if response.status_code >= 400:
+                return {"status": "error", "message": f"UGS returned HTTP {response.status_code}: {response.text}"}
             return {"status": "ok", "code": response.status_code, "body": response.text}
     except httpx.ConnectError as e:
         return {"status": "error", "message": f"Cannot reach UGS pendant at {UGS_BASE_URL}: {e}"}
