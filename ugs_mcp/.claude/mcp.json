@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ugs": {
+      "command": "python",
+      "args": ["server.py"],
+      "env": {
+        "UGS_HOST": "localhost",
+        "UGS_PORT": "8080"
+      }
+    }
+  }
+}
