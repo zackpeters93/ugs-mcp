@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 
 UGS_HOST = os.getenv("UGS_HOST", "localhost")
-UGS_PORT = os.getenv("UGS_PORT", "8080")
+UGS_PORT = int(os.getenv("UGS_PORT", "8080"))
 UGS_BASE_URL = f"http://{UGS_HOST}:{UGS_PORT}"
-MACROS_DIR = Path(os.getenv("MACROS_DIR", "./macros"))
+MACROS_DIR = Path(os.getenv("MACROS_DIR", str(Path(__file__).parent / "macros")))
 RAPID_SPEED_MM_MIN = float(os.getenv("RAPID_SPEED_MM_MIN", "5000"))
 
 WARNING_MESSAGES = {
