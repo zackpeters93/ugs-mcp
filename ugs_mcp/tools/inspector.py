@@ -119,10 +119,10 @@ async def tool_gcode_run_macro(name: str, confirmed: bool = False) -> str:
         "",
         "G-code preview:",
     ]
-    for line in content.splitlines()[:10]:
-        if not line.startswith(";"):
-            lines.append(f"  {line}")
-    if content.count("\n") > 10:
+    preview_lines = [l for l in content.splitlines() if not l.startswith(";")]
+    for line in preview_lines[:10]:
+        lines.append(f"  {line}")
+    if len(preview_lines) > 10:
         lines.append("  ...")
 
     if warnings:

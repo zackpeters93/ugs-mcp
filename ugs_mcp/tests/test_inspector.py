@@ -51,7 +51,9 @@ def test_save_macro_creates_file(tmp_path):
     with patch("tools.inspector.MACROS_DIR", tmp_path):
         result = tool_gcode_save_macro("probe_z", "G21\nG91\nG38.2 Z-20 F50\nG92 Z0", "Probe Z surface")
     assert "saved" in result.lower() or "probe_z" in result.lower()
-    assert (tmp_path / "probe_z.nc").exists()
+    saved = tmp_path / "probe_z.nc"
+    assert saved.exists()
+    assert "; Macro: probe_z" in saved.read_text()
 
 
 def test_list_macros_empty(tmp_path):
@@ -79,3 +81,14 @@ async def test_run_macro_preview(tmp_path):
 async def test_run_macro_missing():
     result = await tool_gcode_run_macro("nonexistent", confirmed=False)
     assert "not found" in result.lower()
+
+
+@pytest.mark.asyncio
+async def test_run_macro_confirmed_sends_gcode(tmp_path):
+    (tmp_path / "probe_z.nc").write_text("G21\nG38.2 Z-20 F50")
+    send_mock = AsyncMock(return_value={"status": "ok"})
+    with patch("tools.inspector.MACROS_DIR", tmp_path):
+        with patch("tools.inspector.send_gcode", new=send_mock):
+            result = await tool_gcode_run_macro("probe_z", confirmed=True)
+    send_mock.assert_called_once()
+    assert "started" in result.lower() or "probe_z" in result.lower()
