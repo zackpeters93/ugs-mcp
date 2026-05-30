@@ -68,7 +68,6 @@ def safety_check(file_path_or_code: str) -> List[Dict[str, Any]]:
     state = ModalState()
     warnings = []
     unit_declared = False
-    has_motion = False
 
     for line in lines:
         if not line.words:
@@ -83,9 +82,6 @@ def safety_check(file_path_or_code: str) -> List[Dict[str, Any]]:
 
         is_cut_move = any(g in (1, 2, 3) for g in g_values)
         is_any_move = any(g in (0, 1, 2, 3) for g in g_values)
-
-        if is_any_move:
-            has_motion = True
 
         if is_any_move and not unit_declared:
             warnings.append({
