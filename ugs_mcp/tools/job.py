@@ -21,14 +21,14 @@ async def tool_run_file(file_path: str, confirmed: bool = False) -> str:
     if not p.exists():
         return f"File not found: {file_path}"
 
-    warnings = safety_check(file_path)
-    status = await get_status()
-
     if confirmed:
         result = await send_gcode(f"SEND_FILE:{file_path}")
         if result["status"] == "error":
             return f"{banner}\n\nFailed to start job: {result['message']}"
         return f"{banner}\n\nJob started: {p.name}"
+
+    warnings = safety_check(file_path)
+    status = await get_status()
 
     lines = [
         banner,

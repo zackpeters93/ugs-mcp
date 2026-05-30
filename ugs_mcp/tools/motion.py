@@ -28,7 +28,6 @@ async def tool_jog(axis: str, distance_mm: float, feedrate: float, confirmed: bo
     """
     banner = WARNING_MESSAGES["jog"]
     axis = axis.upper()
-    status = await get_status()
 
     if confirmed:
         alarm = await _check_alarm_state()
@@ -40,6 +39,7 @@ async def tool_jog(axis: str, distance_mm: float, feedrate: float, confirmed: bo
             return f"{banner}\n\nJog failed: {result['message']}"
         return f"{banner}\n\nJogging {axis} by {distance_mm}mm at {feedrate}mm/min. Command sent."
 
+    status = await get_status()
     mp = status.get("machine_position", {})
     lines = [
         banner,
