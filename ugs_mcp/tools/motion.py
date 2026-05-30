@@ -33,7 +33,7 @@ async def tool_jog(axis: str, distance_mm: float, feedrate: float, confirmed: bo
         alarm = await _check_alarm_state()
         if alarm:
             return alarm
-        cmd = f"$J=G91 {axis}{distance_mm} F{feedrate}"
+        cmd = f"$J=G91 G21 {axis}{distance_mm} F{feedrate}"
         result = await send_gcode(cmd)
         if result["status"] == "error":
             return f"{banner}\n\nJog failed: {result['message']}"
@@ -128,7 +128,7 @@ async def tool_return_to_zero(confirmed: bool = False) -> str:
         alarm = await _check_alarm_state()
         if alarm:
             return alarm
-        result = await send_gcode("RETURN_TO_ZERO")
+        result = await send_gcode("G0 G54 X0 Y0 Z0")
         if result["status"] == "error":
             return f"{banner}\n\nReturn to zero failed: {result['message']}"
         return f"{banner}\n\nMoving to G54 work zero (X0 Y0 Z0)."

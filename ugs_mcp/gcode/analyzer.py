@@ -116,7 +116,10 @@ def safety_check(file_path_or_code: str) -> List[Dict[str, Any]]:
 
 
 def estimate_time(file_path_or_code: str, rapid_speed: float = 5000.0) -> str:
-    """Estimate total machining time. Returns HH:MM:SS string."""
+    """Estimate total machining time. Returns HH:MM:SS string.
+    Note: G2/G3 arc moves use chord (straight-line) distance, not arc length.
+    Estimates for programs with many arcs will be shorter than actual time.
+    """
     lines = load_gcode(file_path_or_code)
     state = ModalState()
     total_seconds = 0.0

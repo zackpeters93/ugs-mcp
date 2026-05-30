@@ -40,10 +40,13 @@ async def tool_troubleshoot_connection() -> str:
 
 
 async def tool_connect(port: str, baud_rate: int = 115200, firmware: str = "GRBL") -> str:
-    """Connect UGS to CNC machine via serial port."""
+    """Connect UGS to CNC machine via serial port.
+    NOTE: UGS pendant connection API endpoint needs verification during hardware testing.
+    The CONNECT command may require a dedicated REST endpoint rather than sendGcode.
+    """
     result = await send_gcode(f"CONNECT:{port}:{baud_rate}:{firmware}")
     if result["status"] == "error":
-        return f"{WARNING_MESSAGES['connection_issue']}\n\nFailed to connect: {result['message']}"
+        return f"{WARNING_MESSAGES['connection_issue']}\n\nFailed to connect: {result['message']}\n\nIf this fails, connect manually via the UGS UI and use this server for control only."
     return f"Connection initiated to {port} at {baud_rate} baud ({firmware} firmware).\nCheck UGS for connection status."
 
 
