@@ -1,5 +1,4 @@
 # ugs_mcp/server.py
-import asyncio
 from mcp.server.fastmcp import FastMCP
 
 from tools.connection import tool_connect, tool_disconnect, tool_troubleshoot_connection

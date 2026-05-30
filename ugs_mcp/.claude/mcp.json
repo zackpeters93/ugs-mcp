@@ -2,7 +2,7 @@
   "mcpServers": {
     "ugs": {
       "command": "python",
-      "args": ["server.py"],
+      "args": ["/Users/techdev/Projects/ClaudeDC/UGS_MCP/ugs_mcp/server.py"],
       "env": {
         "UGS_HOST": "localhost",
         "UGS_PORT": "8080"
