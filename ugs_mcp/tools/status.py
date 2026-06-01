@@ -1,5 +1,5 @@
 # ugs_mcp/tools/status.py
-from ugs_client import get_status
+from ugs_mcp.ugs_client import get_status
 
 
 async def tool_get_status() -> str:

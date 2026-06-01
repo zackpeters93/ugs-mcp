@@ -1,7 +1,7 @@
 # ugs_mcp/tools/connection.py
 import serial.tools.list_ports
-from ugs_client import get_status, is_pendant_reachable, connect_machine, disconnect_machine
-from config import UGS_BASE_URL, WARNING_MESSAGES
+from ugs_mcp.ugs_client import get_status, is_pendant_reachable, connect_machine, disconnect_machine
+from ugs_mcp.config import UGS_BASE_URL, WARNING_MESSAGES
 
 
 async def tool_troubleshoot_connection() -> str:

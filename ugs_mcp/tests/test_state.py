@@ -1,5 +1,5 @@
-from gcode.parser import parse_line
-from gcode.state import ModalState, apply_line
+from ugs_mcp.gcode.parser import parse_line
+from ugs_mcp.gcode.state import ModalState, apply_line
 
 
 def test_initial_state():

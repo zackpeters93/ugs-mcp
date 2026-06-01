@@ -2,7 +2,7 @@
 import pytest
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
-from tools.inspector import (
+from ugs_mcp.tools.inspector import (
     tool_gcode_translate,
     tool_gcode_safety_check,
     tool_gcode_estimate_time,
@@ -48,7 +48,7 @@ def test_list_tools_tool_returns_string():
 
 
 def test_save_macro_creates_file(tmp_path):
-    with patch("tools.inspector.MACROS_DIR", tmp_path):
+    with patch("ugs_mcp.tools.inspector.MACROS_DIR", tmp_path):
         result = tool_gcode_save_macro("probe_z", "G21\nG91\nG38.2 Z-20 F50\nG92 Z0", "Probe Z surface")
     assert "saved" in result.lower() or "probe_z" in result.lower()
     saved = tmp_path / "probe_z.nc"
@@ -57,14 +57,14 @@ def test_save_macro_creates_file(tmp_path):
 
 
 def test_list_macros_empty(tmp_path):
-    with patch("tools.inspector.MACROS_DIR", tmp_path):
+    with patch("ugs_mcp.tools.inspector.MACROS_DIR", tmp_path):
         result = tool_gcode_list_macros()
     assert "no macros" in result.lower() or result.strip() == "" or "0" in result
 
 
 def test_list_macros_shows_saved(tmp_path):
     (tmp_path / "probe_z.nc").write_text("G21\nG38.2 Z-20 F50")
-    with patch("tools.inspector.MACROS_DIR", tmp_path):
+    with patch("ugs_mcp.tools.inspector.MACROS_DIR", tmp_path):
         result = tool_gcode_list_macros()
     assert "probe_z" in result
 
@@ -72,23 +72,24 @@ def test_list_macros_shows_saved(tmp_path):
 @pytest.mark.asyncio
 async def test_run_macro_preview(tmp_path):
     (tmp_path / "probe_z.nc").write_text("G21\nG38.2 Z-20 F50")
-    with patch("tools.inspector.MACROS_DIR", tmp_path):
-        result = await tool_gcode_run_macro("probe_z", confirmed=False)
-    assert "HEADS UP" in result or "MACRO" in result
+    with patch("ugs_mcp.tools.inspector.MACROS_DIR", tmp_path):
+        result = await tool_gcode_run_macro("probe_z")
+    assert "HEADS UP" in result or "MACRO" in result or "token" in result.lower()
 
 
 @pytest.mark.asyncio
 async def test_run_macro_missing():
-    result = await tool_gcode_run_macro("nonexistent", confirmed=False)
+    result = await tool_gcode_run_macro("nonexistent")
     assert "not found" in result.lower()
 
 
 @pytest.mark.asyncio
-async def test_run_macro_confirmed_sends_gcode(tmp_path):
+async def test_run_macro_confirmed_sends_file(tmp_path):
     (tmp_path / "probe_z.nc").write_text("G21\nG38.2 Z-20 F50")
     send_mock = AsyncMock(return_value={"status": "ok"})
-    with patch("tools.inspector.MACROS_DIR", tmp_path):
-        with patch("tools.inspector.send_gcode", new=send_mock):
-            result = await tool_gcode_run_macro("probe_z", confirmed=True)
+    with patch("ugs_mcp.tools.inspector.MACROS_DIR", tmp_path):
+        with patch("ugs_mcp.tools.inspector.consume_token", return_value="Run macro: probe_z"):
+            with patch("ugs_mcp.tools.inspector.send_file", new=send_mock):
+                result = await tool_gcode_run_macro("probe_z", "FAKETOKEN")
     send_mock.assert_called_once()
     assert "started" in result.lower() or "probe_z" in result.lower()

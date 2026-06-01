@@ -1,11 +1,11 @@
 # ugs_mcp/server.py
 from mcp.server.fastmcp import FastMCP
 
-from tools.connection import tool_connect, tool_disconnect, tool_troubleshoot_connection
-from tools.status import tool_get_status
-from tools.motion import tool_jog, tool_home, tool_set_work_zero, tool_return_to_zero
-from tools.job import tool_run_file, tool_pause_job, tool_cancel_job, tool_get_job_status
-from tools.inspector import (
+from ugs_mcp.tools.connection import tool_connect, tool_disconnect, tool_troubleshoot_connection
+from ugs_mcp.tools.status import tool_get_status
+from ugs_mcp.tools.motion import tool_jog, tool_home, tool_set_work_zero, tool_return_to_zero
+from ugs_mcp.tools.job import tool_run_file, tool_pause_job, tool_cancel_job, tool_get_job_status
+from ugs_mcp.tools.inspector import (
     tool_gcode_translate,
     tool_gcode_safety_check,
     tool_gcode_estimate_time,
@@ -178,5 +178,9 @@ async def gcode_run_macro(name: str, confirmation_token: str = "") -> str:
     return await tool_gcode_run_macro(name, confirmation_token)
 
 
-if __name__ == "__main__":
+def main():
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()

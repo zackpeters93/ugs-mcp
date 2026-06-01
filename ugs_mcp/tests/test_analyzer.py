@@ -1,6 +1,6 @@
 # ugs_mcp/tests/test_analyzer.py
 import pytest
-from gcode.analyzer import translate
+from ugs_mcp.gcode.analyzer import translate
 
 
 def test_translate_returns_list():
@@ -48,7 +48,7 @@ def test_translate_comment_only_line():
     assert "comment" in result[0]["explanation"].lower() or "setup section" in result[0]["explanation"]
 
 
-from gcode.analyzer import safety_check
+from ugs_mcp.gcode.analyzer import safety_check
 
 
 def test_safety_check_returns_list():
@@ -92,7 +92,7 @@ def test_safety_check_warning_has_required_fields():
     assert "severity" in w
 
 
-from gcode.analyzer import estimate_time, list_tools
+from ugs_mcp.gcode.analyzer import estimate_time, list_tools
 
 
 def test_estimate_time_returns_string():

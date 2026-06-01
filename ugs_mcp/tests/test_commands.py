@@ -1,5 +1,5 @@
 # ugs_mcp/tests/test_commands.py
-from gcode.commands import describe_word, GCODE_DESCRIPTIONS
+from ugs_mcp.gcode.commands import describe_word, GCODE_DESCRIPTIONS
 
 
 def test_g0_description():

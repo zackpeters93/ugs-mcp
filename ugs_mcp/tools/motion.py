@@ -1,8 +1,8 @@
 # ugs_mcp/tools/motion.py
 from typing import List
-from ugs_client import send_gcode, get_status
-from config import WARNING_MESSAGES
-from confirmation import generate_token, consume_token, TOKEN_TTL_SECONDS
+from ugs_mcp.ugs_client import send_gcode, get_status
+from ugs_mcp.config import WARNING_MESSAGES
+from ugs_mcp.confirmation import generate_token, consume_token, TOKEN_TTL_SECONDS
 
 _TTL_MIN = TOKEN_TTL_SECONDS // 60
 

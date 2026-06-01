@@ -1,5 +1,5 @@
 import pytest
-from gcode.parser import parse_line, parse_string, load_gcode, GCodeWord, GCodeLine
+from ugs_mcp.gcode.parser import parse_line, parse_string, load_gcode, GCodeWord, GCodeLine
 
 def test_parse_simple_g0():
     line = parse_line("G0 X10 Y20", line_number=1)

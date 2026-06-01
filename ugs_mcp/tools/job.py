@@ -1,9 +1,9 @@
 # ugs_mcp/tools/job.py
 from pathlib import Path
-from ugs_client import send_gcode, get_status, send_file, cancel_file
-from config import WARNING_MESSAGES
-from gcode.analyzer import safety_check
-from confirmation import generate_token, consume_token, TOKEN_TTL_SECONDS
+from ugs_mcp.ugs_client import send_gcode, get_status, send_file, cancel_file
+from ugs_mcp.config import WARNING_MESSAGES
+from ugs_mcp.gcode.analyzer import safety_check
+from ugs_mcp.confirmation import generate_token, consume_token, TOKEN_TTL_SECONDS
 
 _TTL_MIN = TOKEN_TTL_SECONDS // 60
 

@@ -1,6 +1,6 @@
 from typing import Any, Dict
 import httpx
-from config import UGS_BASE_URL
+from ugs_mcp.config import UGS_BASE_URL
 
 
 async def send_gcode(command: str) -> Dict[str, Any]:

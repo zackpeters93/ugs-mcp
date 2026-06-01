@@ -2,10 +2,10 @@
 from pathlib import Path
 from typing import Optional
 
-from config import MACROS_DIR, WARNING_MESSAGES, RAPID_SPEED_MM_MIN
-from gcode.analyzer import translate, safety_check, estimate_time, list_tools
-from ugs_client import send_file
-from confirmation import generate_token, consume_token, TOKEN_TTL_SECONDS
+from ugs_mcp.config import MACROS_DIR, WARNING_MESSAGES, RAPID_SPEED_MM_MIN
+from ugs_mcp.gcode.analyzer import translate, safety_check, estimate_time, list_tools
+from ugs_mcp.ugs_client import send_file
+from ugs_mcp.confirmation import generate_token, consume_token, TOKEN_TTL_SECONDS
 
 _TTL_MIN = TOKEN_TTL_SECONDS // 60
 
