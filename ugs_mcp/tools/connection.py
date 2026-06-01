@@ -1,6 +1,6 @@
 # ugs_mcp/tools/connection.py
 import serial.tools.list_ports
-from ugs_client import get_status, is_pendant_reachable, send_gcode
+from ugs_client import get_status, is_pendant_reachable, connect_machine, disconnect_machine
 from config import UGS_BASE_URL, WARNING_MESSAGES
 
 
@@ -40,11 +40,8 @@ async def tool_troubleshoot_connection() -> str:
 
 
 async def tool_connect(port: str, baud_rate: int = 115200, firmware: str = "GRBL") -> str:
-    """Connect UGS to CNC machine via serial port.
-    NOTE: UGS pendant connection API endpoint needs verification during hardware testing.
-    The CONNECT command may require a dedicated REST endpoint rather than sendGcode.
-    """
-    result = await send_gcode(f"CONNECT:{port}:{baud_rate}:{firmware}")
+    """Connect UGS to CNC machine via serial port."""
+    result = await connect_machine(port, baud_rate, firmware)
     if result["status"] == "error":
         return f"{WARNING_MESSAGES['connection_issue']}\n\nFailed to connect: {result['message']}\n\nIf this fails, connect manually via the UGS UI and use this server for control only."
     return f"Connection initiated to {port} at {baud_rate} baud ({firmware} firmware).\nCheck UGS for connection status."
@@ -52,7 +49,7 @@ async def tool_connect(port: str, baud_rate: int = 115200, firmware: str = "GRBL
 
 async def tool_disconnect() -> str:
     """Disconnect UGS from the CNC machine."""
-    result = await send_gcode("DISCONNECT")
+    result = await disconnect_machine()
     if result["status"] == "error":
         return f"Disconnect failed: {result['message']}"
     return "Disconnected from CNC machine."

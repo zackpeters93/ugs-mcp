@@ -2,10 +2,26 @@
 from typing import List
 from ugs_client import send_gcode, get_status
 from config import WARNING_MESSAGES
+from confirmation import generate_token, consume_token, TOKEN_TTL_SECONDS
+
+_TTL_MIN = TOKEN_TTL_SECONDS // 60
 
 
-def _preview_footer() -> str:
-    return "\n\nThis is a PREVIEW. Call again with confirmed=True to execute."
+def _token_instructions(token: str) -> str:
+    return (
+        f"\n\nTo execute, show the user this confirmation token: [{token}]\n"
+        f"Ask them to confirm by reading the token back to you.\n"
+        f"Then call this tool again with confirmation_token=\"{token}\".\n"
+        f"Token expires in {_TTL_MIN} minutes and is single-use."
+    )
+
+
+def _invalid_token_error(banner: str) -> str:
+    return (
+        f"{banner}\n\n"
+        "INVALID OR EXPIRED TOKEN - movement blocked.\n"
+        "Call this tool without a token to generate a new preview and token."
+    )
 
 
 async def _check_alarm_state() -> str | None:
@@ -20,16 +36,23 @@ async def _check_alarm_state() -> str | None:
     return None
 
 
-async def tool_jog(axis: str, distance_mm: float, feedrate: float, confirmed: bool = False) -> str:
+async def tool_jog(axis: str, distance_mm: float, feedrate: float, confirmation_token: str = "") -> str:
     """
-    Jog a single axis by the given distance.
-    ALWAYS call with confirmed=False first to show the user a preview.
-    Only call with confirmed=True after explicit user acknowledgment.
+    Jog a single axis by distance_mm at feedrate mm/min.
+
+    TWO-STEP SAFETY PROTOCOL - machine will NOT move without a user-provided token:
+    Step 1: Call with no token -> returns a preview and a confirmation token.
+            Show the token to the user and ask them to confirm.
+    Step 2: Call again with the token the user confirmed -> machine moves.
+    Claude cannot self-confirm. The token must come from the user.
     """
     banner = WARNING_MESSAGES["jog"]
     axis = axis.upper()
 
-    if confirmed:
+    if confirmation_token:
+        desc = consume_token(confirmation_token)
+        if desc is None:
+            return _invalid_token_error(banner)
         alarm = await _check_alarm_state()
         if alarm:
             return alarm
@@ -37,10 +60,12 @@ async def tool_jog(axis: str, distance_mm: float, feedrate: float, confirmed: bo
         result = await send_gcode(cmd)
         if result["status"] == "error":
             return f"{banner}\n\nJog failed: {result['message']}"
-        return f"{banner}\n\nJogging {axis} by {distance_mm}mm at {feedrate}mm/min. Command sent."
+        return f"{banner}\n\nJogging {axis} by {distance_mm}mm at {feedrate}mm/min."
 
     status = await get_status()
     mp = status.get("machine_position", {})
+    token = generate_token(f"Jog {axis} {distance_mm}mm at {feedrate}mm/min")
+
     lines = [
         banner,
         "",
@@ -52,42 +77,50 @@ async def tool_jog(axis: str, distance_mm: float, feedrate: float, confirmed: bo
     ]
     if axis in ("X", "Y", "Z"):
         new_val = mp.get(axis.lower(), 0) + distance_mm
-        lines.append(f"  New {axis} position will be approx: {new_val:.3f}mm")
-    lines.append(_preview_footer())
+        lines.append(f"  New {axis} position (approx): {new_val:.3f}mm")
+    lines.append(_token_instructions(token))
     return "\n".join(lines)
 
 
-async def tool_home(confirmed: bool = False) -> str:
+async def tool_home(confirmation_token: str = "") -> str:
     """
-    Run the GRBL homing cycle ($H).
-    ALWAYS call with confirmed=False first to show the user a preview.
-    Only call with confirmed=True after explicit user acknowledgment.
+    Run the GRBL homing cycle ($H). ALL axes move toward limit switches at full speed.
+
+    TWO-STEP SAFETY PROTOCOL - machine will NOT move without a user-provided token:
+    Step 1: Call with no token -> returns a preview and a confirmation token.
+            Show the token to the user and ask them to confirm.
+    Step 2: Call again with the token the user confirmed -> homing starts.
+    Claude cannot self-confirm. The token must come from the user.
     """
     banner = WARNING_MESSAGES["home"]
 
-    if confirmed:
+    if confirmation_token:
+        desc = consume_token(confirmation_token)
+        if desc is None:
+            return _invalid_token_error(banner)
         result = await send_gcode("$H")
         if result["status"] == "error":
             return f"{banner}\n\nHoming failed: {result['message']}"
-        return f"{banner}\n\nHoming cycle started. All axes will move toward limit switches."
+        return f"{banner}\n\nHoming cycle started. All axes moving toward limit switches."
 
+    token = generate_token("Homing cycle ($H) - all axes")
     lines = [
         banner,
         "",
         "PREVIEW - no movement yet:",
         "  Command: $H (GRBL homing cycle)",
-        "  All axes will move toward their limit switches at maximum speed.",
-        "  Make sure nothing is in the machine's path before confirming.",
-        _preview_footer(),
+        "  ALL axes will move toward their limit switches at maximum speed.",
+        "  Ensure nothing is in the machine's travel path before confirming.",
+        _token_instructions(token),
     ]
     return "\n".join(lines)
 
 
 async def tool_set_work_zero(axes: List[str] = None, confirmed: bool = False) -> str:
     """
-    Set G54 work zero at the current machine position.
+    Set G54 work zero at the current machine position for the specified axes.
+    This does NOT move the machine - it only sets coordinate offsets.
     ALWAYS call with confirmed=False first to show the user a preview.
-    Only call with confirmed=True after explicit user acknowledgment.
     """
     if axes is None:
         axes = ["X", "Y", "Z"]
@@ -110,21 +143,28 @@ async def tool_set_work_zero(axes: List[str] = None, confirmed: bool = False) ->
         f"  Axes to zero: {axes_upper}",
         "  Current machine position:",
         f"    X={mp.get('x', 0):.3f}  Y={mp.get('y', 0):.3f}  Z={mp.get('z', 0):.3f}",
-        "  This will set the G54 work origin to the above values for the selected axes.",
-        _preview_footer(),
+        "  This sets the G54 work origin for selected axes. Machine does NOT move.",
+        "\n\nCall again with confirmed=True to apply.",
     ]
     return "\n".join(lines)
 
 
-async def tool_return_to_zero(confirmed: bool = False) -> str:
+async def tool_return_to_zero(confirmation_token: str = "") -> str:
     """
-    Rapid to G54 work zero (X0 Y0 Z0).
-    ALWAYS call with confirmed=False first to show the user a preview.
-    Only call with confirmed=True after explicit user acknowledgment.
+    Rapid (G0) to G54 work zero (X0 Y0 Z0).
+
+    TWO-STEP SAFETY PROTOCOL - machine will NOT move without a user-provided token:
+    Step 1: Call with no token -> returns a preview and a confirmation token.
+            Show the token to the user and ask them to confirm.
+    Step 2: Call again with the token the user confirmed -> machine moves.
+    Claude cannot self-confirm. The token must come from the user.
     """
     banner = WARNING_MESSAGES["return_to_zero"]
 
-    if confirmed:
+    if confirmation_token:
+        desc = consume_token(confirmation_token)
+        if desc is None:
+            return _invalid_token_error(banner)
         alarm = await _check_alarm_state()
         if alarm:
             return alarm
@@ -133,12 +173,13 @@ async def tool_return_to_zero(confirmed: bool = False) -> str:
             return f"{banner}\n\nReturn to zero failed: {result['message']}"
         return f"{banner}\n\nMoving to G54 work zero (X0 Y0 Z0)."
 
+    token = generate_token("Return to G54 work zero (G0 X0 Y0 Z0)")
     lines = [
         banner,
         "",
         "PREVIEW - no movement yet:",
         "  Will rapid (G0) to X=0 Y=0 Z=0 in the G54 work coordinate system.",
-        "  Make sure the path is clear before confirming.",
-        _preview_footer(),
+        "  Ensure the path is clear before confirming.",
+        _token_instructions(token),
     ]
     return "\n".join(lines)

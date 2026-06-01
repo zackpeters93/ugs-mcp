@@ -4,7 +4,10 @@ from typing import Optional
 
 from config import MACROS_DIR, WARNING_MESSAGES, RAPID_SPEED_MM_MIN
 from gcode.analyzer import translate, safety_check, estimate_time, list_tools
-from ugs_client import send_gcode
+from ugs_client import send_file
+from confirmation import generate_token, consume_token, TOKEN_TTL_SECONDS
+
+_TTL_MIN = TOKEN_TTL_SECONDS // 60
 
 
 def tool_gcode_translate(file_path_or_code: str, max_lines: Optional[int] = None) -> str:
@@ -90,23 +93,34 @@ def tool_gcode_list_macros() -> str:
     return "\n".join(lines)
 
 
-async def tool_gcode_run_macro(name: str, confirmed: bool = False) -> str:
+async def tool_gcode_run_macro(name: str, confirmation_token: str = "") -> str:
     """
     Run a saved macro by name.
-    ALWAYS call with confirmed=False first to show a preview.
-    Only call with confirmed=True after explicit user acknowledgment.
+
+    TWO-STEP SAFETY PROTOCOL - machine will NOT run without a user-provided token:
+    Step 1: Call with no token -> shows G-code preview, safety check, and returns a token.
+            Show the token to the user and ask them to confirm.
+    Step 2: Call again with the token the user confirmed -> macro runs.
+    Claude cannot self-confirm. The token must come from the user.
     """
     banner = WARNING_MESSAGES["run_macro"]
     macro_path = MACROS_DIR / f"{name}.nc"
 
     if not macro_path.exists():
-        return f"Macro '{name}' not found. Run tool_gcode_list_macros to see available macros."
+        return f"Macro '{name}' not found. Use gcode_list_macros to see available macros."
 
     content = macro_path.read_text()
     warnings = safety_check(content)
 
-    if confirmed:
-        result = await send_gcode(f"SEND_FILE:{macro_path}")
+    if confirmation_token:
+        desc = consume_token(confirmation_token)
+        if desc is None:
+            return (
+                f"{banner}\n\n"
+                "INVALID OR EXPIRED TOKEN - macro blocked.\n"
+                "Call this tool without a token to generate a new preview and token."
+            )
+        result = await send_file(str(macro_path))
         if result["status"] == "error":
             return f"{banner}\n\nFailed to run macro: {result['message']}"
         return f"{banner}\n\nMacro '{name}' started."
@@ -132,5 +146,11 @@ async def tool_gcode_run_macro(name: str, confirmed: bool = False) -> str:
     else:
         lines.append("\nSafety check: PASSED")
 
-    lines.append("\nThis is a PREVIEW. Call again with confirmed=True to run the macro.")
+    token = generate_token(f"Run macro: {name}")
+    lines.append(
+        f"\n\nTo execute, show the user this confirmation token: [{token}]\n"
+        f"Ask them to confirm by reading the token back to you.\n"
+        f"Then call this tool again with confirmation_token=\"{token}\".\n"
+        f"Token expires in {_TTL_MIN} minutes and is single-use."
+    )
     return "\n".join(lines)

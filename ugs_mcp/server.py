@@ -43,53 +43,57 @@ async def ugs_get_status() -> str:
 
 
 @mcp.tool()
-async def ugs_jog(axis: str, distance_mm: float, feedrate: float, confirmed: bool = False) -> str:
+async def ugs_jog(axis: str, distance_mm: float, feedrate: float, confirmation_token: str = "") -> str:
     """
     Jog a single axis (X, Y, or Z) by distance_mm at feedrate mm/min.
-    ALWAYS call with confirmed=False first. Show the preview to the user.
-    Only pass confirmed=True after the user has explicitly said they understand the machine will move.
+    Call with no token first to get a preview and confirmation token.
+    The user must provide the token back before movement executes.
+    Claude CANNOT self-confirm movement - the token enforces this at the server level.
     """
-    return await tool_jog(axis, distance_mm, feedrate, confirmed)
+    return await tool_jog(axis, distance_mm, feedrate, confirmation_token)
 
 
 @mcp.tool()
-async def ugs_home(confirmed: bool = False) -> str:
+async def ugs_home(confirmation_token: str = "") -> str:
     """
-    Run the GRBL homing cycle ($H). All axes will move toward limit switches at full speed.
-    ALWAYS call with confirmed=False first. Show the preview to the user.
-    Only pass confirmed=True after the user explicitly acknowledges the danger.
+    Run the GRBL homing cycle ($H). All axes move toward limit switches at full speed.
+    Call with no token first to get a preview and confirmation token.
+    The user must provide the token back before homing executes.
+    Claude CANNOT self-confirm movement - the token enforces this at the server level.
     """
-    return await tool_home(confirmed)
+    return await tool_home(confirmation_token)
 
 
 @mcp.tool()
 async def ugs_set_work_zero(axes: list = None, confirmed: bool = False) -> str:
     """
     Set G54 work zero at the current machine position for the specified axes.
-    ALWAYS call with confirmed=False first. Show the preview to the user.
-    Only pass confirmed=True after the user explicitly confirms.
+    This does NOT move the machine - only sets coordinate offsets.
+    Call with confirmed=False first to preview, then confirmed=True to apply.
     """
     return await tool_set_work_zero(axes or ["X", "Y", "Z"], confirmed)
 
 
 @mcp.tool()
-async def ugs_return_to_zero(confirmed: bool = False) -> str:
+async def ugs_return_to_zero(confirmation_token: str = "") -> str:
     """
     Rapid (G0) to G54 work zero (X0 Y0 Z0).
-    ALWAYS call with confirmed=False first. Show the preview to the user.
-    Only pass confirmed=True after the user explicitly confirms.
+    Call with no token first to get a preview and confirmation token.
+    The user must provide the token back before movement executes.
+    Claude CANNOT self-confirm movement - the token enforces this at the server level.
     """
-    return await tool_return_to_zero(confirmed)
+    return await tool_return_to_zero(confirmation_token)
 
 
 @mcp.tool()
-async def ugs_run_file(file_path: str, confirmed: bool = False) -> str:
+async def ugs_run_file(file_path: str, confirmation_token: str = "") -> str:
     """
-    Stream a G-code file to the machine. Automatically runs a safety check in preview mode.
-    ALWAYS call with confirmed=False first to show the safety report and preview.
-    Only pass confirmed=True after the user explicitly confirms they want to start the job.
+    Stream a G-code file to the machine. Runs safety check in preview mode.
+    Call with no token first to get the safety report and confirmation token.
+    The user must provide the token back before the job starts.
+    Claude CANNOT self-confirm - the token enforces this at the server level.
     """
-    return await tool_run_file(file_path, confirmed)
+    return await tool_run_file(file_path, confirmation_token)
 
 
 @mcp.tool()
@@ -102,8 +106,9 @@ async def ugs_pause_job() -> str:
 async def ugs_cancel_job(confirmed: bool = False) -> str:
     """
     Cancel the running job. Stopping mid-cut will leave a mark on the part.
-    ALWAYS call with confirmed=False first. Show the preview to the user.
-    Only pass confirmed=True after the user explicitly confirms.
+    Uses simple confirmed=True/False (not a token) because stopping is always safer
+    than continuing - token friction on an emergency stop would be dangerous.
+    Call with confirmed=False first to preview, then confirmed=True to cancel.
     """
     return await tool_cancel_job(confirmed)
 
@@ -163,13 +168,14 @@ def gcode_list_macros() -> str:
 
 
 @mcp.tool()
-async def gcode_run_macro(name: str, confirmed: bool = False) -> str:
+async def gcode_run_macro(name: str, confirmation_token: str = "") -> str:
     """
     Run a saved macro by name.
-    ALWAYS call with confirmed=False first to show G-code preview and safety check.
-    Only pass confirmed=True after the user explicitly confirms.
+    Call with no token first to get the G-code preview, safety check, and confirmation token.
+    The user must provide the token back before the macro runs.
+    Claude CANNOT self-confirm - the token enforces this at the server level.
     """
-    return await tool_gcode_run_macro(name, confirmed)
+    return await tool_gcode_run_macro(name, confirmation_token)
 
 
 if __name__ == "__main__":
