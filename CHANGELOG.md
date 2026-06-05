@@ -2,6 +2,11 @@
 
 All notable changes to ugs-mcp are documented here.
 
+## [0.1.1] — 2026-06-05
+
+### Changed
+- Add MCP Registry ownership marker to README for `registry.modelcontextprotocol.io` listing
+
 ## [0.1.0] — 2026-06-04
 
 Initial public release.

@@ -171,3 +171,5 @@ Likely works with any GRBL-based machine. TinyG/FluidNC/Smoothieware untested.
 MIT — see [LICENSE](LICENSE).
 
 **No warranty. No liability. Read [SAFETY.md](SAFETY.md).**
+
+<!-- mcp-name: io.github.zackpeters93/ugs-mcp -->

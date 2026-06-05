@@ -1,0 +1,50 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.zackpeters93/ugs-mcp",
+  "description": "CNC machine control via Universal G-code Sender. Jog, home, run files with hardware safety tokens.",
+  "repository": {
+    "url": "https://github.com/zackpeters93/ugs-mcp",
+    "source": "github"
+  },
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "ugs-mcp",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "UGS_HOST",
+          "description": "UGS Pendant host address",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "UGS_PORT",
+          "description": "UGS Pendant port (default: 8080)",
+          "isRequired": false,
+          "format": "number",
+          "isSecret": false
+        },
+        {
+          "name": "MACROS_DIR",
+          "description": "Directory for saved G-code macros",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "RAPID_SPEED_MM_MIN",
+          "description": "Rapid speed in mm/min used for return-to-zero (default: 5000)",
+          "isRequired": false,
+          "format": "number",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
